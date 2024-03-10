@@ -1,0 +1,6 @@
+RewriteEngine on
+RewriteRule panorama/(\d+).jpg pano.php?id=$1 [L]
+RewriteRule panorama/(\d+).r(\d+).jpg pano.php?id=$1&resize=$2 [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]

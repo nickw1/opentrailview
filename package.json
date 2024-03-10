@@ -1,0 +1,38 @@
+{
+    "dependencies": {
+        "@turf/bearing": "^6.3.0",
+        "@turf/helpers": "^6.3.0",
+        "bcrypt": "^5.0.1",
+        "connect-pg-simple": "^7.0.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
+        "exifr": "^7.0.0",
+        "express": "^4.17.3",
+        "express-fileupload": "^1.2.1",
+        "express-session": "^1.17.1",
+        "fast-xml-parser": "^4.3.5",
+        "geojson-path-finder-nw": "^1.6.2",
+        "jsfreemaplib": "^0.4.3",
+        "leaflet": "^1.9.4",
+        "leaflet-rotatedmarker": "^0.2.0",
+        "leaflet.markercluster": "^1.5.3",
+        "node-fetch": "^2.6.7",
+        "openwanderer-jsapi": "^0.1.6",
+        "openwanderer-jsapi-transitions": "0.1.2",
+        "pg": "^8.6.0",
+        "pkginfo": "0.2.x",
+        "querystring": "^0.2.1",
+        "sharp": "^0.33.2",
+        "simple-oauth2": "^5.0.0",
+        "validator": "^13.7.0",
+        "xml2js": "^0.6.2"
+    },
+    "devDependencies": {
+        "node-polyfill-webpack-plugin": "^1.1.0",
+        "webpack": "^5.30.0",
+        "webpack-cli": "^4.6.0"
+    },
+    "scripts": {
+        "build": "npx webpack"
+    }
+}

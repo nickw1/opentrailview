@@ -1,0 +1,30 @@
+html, body {
+    width: 100%;
+    height: 100%
+}
+
+.fmap_dlg {
+    position: absolute;
+}
+
+.error {
+    font-weight: bold;
+    font-style: italic;
+}
+
+a {
+    text-decoration: none;
+}
+
+#controlsContainer img:hover, #loginContainer a:hover {
+    cursor: pointer;
+}
+
+.selected {
+    border: 1px solid black;
+    background-color: #c0ffc0;
+}
+
+#searchContainer {
+	background-color: #90c590;
+}
