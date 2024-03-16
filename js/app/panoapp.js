@@ -4,8 +4,9 @@ import XHRPromise from './xhrpromise.js';
 import { Dialog } from 'jsfreemaplib';
 import * as OpenWanderer from 'openwanderer-jsapi';
 import * as OWTransition from 'openwanderer-jsapi-transitions';
+import PhotoManager from './photomgr.js';
 
-class App extends Eventable {
+class PanoApp extends Eventable {
     constructor(options) {
         super();
         if(!options) {
@@ -38,13 +39,11 @@ class App extends Eventable {
         this.setupCss(css);
         this.setupNavigator(options.navigator);
         this.setupControls(options.controlContainer, options.controlIcons);
-        this.searchContainer = options.searchContainer;
         this.rotateControlsContainer = options.rotateControlsContainer;
         this.uploadContainer = options.uploadContainer;
         this.mapUrl = options.mapUrl;
         this.mapAttribution = options.mapAttribution;
         this.dialogParent = options.dialogParent || document.body;
-        this.setupSearchControl();
         this.setupRotateControls();
         if(this.setupUpload) {
             this.setupUploadForm();
@@ -52,6 +51,18 @@ class App extends Eventable {
         this.panoEl = this.navigator.viewer.psv.parent;
         this.mapEl = document.createElement("div");
         this.mapEl.id = "otv_map";
+        if(options.searchContainer) {
+            this.searchContainer = document.getElementById(searchContainer);
+        } else {
+            this.searchContainer = document.createElement("div");
+            this.searchContainer.style.position =  'absolute'; 
+            this.searchContainer.style.top = '100px'; 
+            this.searchContainer.style.left =  '100px'; 
+            this.searchContainer.style.zIndex =  1000;
+            this.searchContainer.id = 'searchContainer'; 
+            this.mapEl.appendChild(this.searchContainer);
+        } 
+        this.setupSearchControl();
         this.panoEl.parentElement.appendChild(this.mapEl);
         this.setupMediaQueries();
         if(this.setupUpload) {
@@ -139,7 +150,7 @@ class App extends Eventable {
     }
 
     setupSearchControl() {
-        document.getElementById(this.searchContainer).innerHTML = `<div id='otv_search'> <input id='otv_q' type='text'  /> <div id='otv_imageContainer'> <img src='${this.controls.search}' alt='Search' id='otv_searchBtn' /> </div> </div> <div id='otv_searchResults' style='clear: both'></div>`;
+        this.searchContainer.innerHTML = `<div id='otv_search'> <input id='otv_q' type='text'  /> <div id='otv_imageContainer'> <img src='${this.controls.search}' alt='Search' id='otv_searchBtn' /> </div> </div> <div id='otv_searchResults' style='clear: both'></div>`;
     }
 
     setupRotateControls() {
@@ -176,7 +187,7 @@ class App extends Eventable {
                 document.getElementById('otv_rotate').style.display = 'none';
                 document.getElementById('otv_delete').style.display = 'none';
                 document.getElementById('otv_select').style.display = 'none';
-                document.getElementById(this.searchContainer).style.display = 'none';
+                this.searchContainer.style.display = 'none';
                 this.setupMapPreview();
                 
                 if(this.mode==1 && loadCentrePano === true) {
@@ -202,7 +213,7 @@ class App extends Eventable {
                 this.mapEl.classList.remove('preview');
                 this.mapMgr.map.invalidateSize();
                 document.getElementById('otv_select').style.display = 'inline';
-                document.getElementById(this.searchContainer).style.display = 'block';
+                this.searchContainer.style.display = 'block';
                 if(this.userid) {
                     document.getElementById('otv_drag').style.display = 'inline';
                     document.getElementById('otv_rotate').style.display = 'inline';
@@ -595,6 +606,14 @@ class App extends Eventable {
             document.getElementById(this.rotateControlsContainer).style.display = "block";
         }
         this.mapMgr.activated = true;    
+
+        const a2 = document.createElement("a");
+        a2.id="setupPhotoMgr";
+        a2.addEventListener("click", this.setupPhotoMgr.bind(this));
+        a2.appendChild(document.createTextNode(" "));
+        a2.appendChild(document.createTextNode("Manage photos"));
+        document.getElementById('loginContainer').appendChild(a2);
+
         if(this.events.login) {
             this.events.login({
                 username: this.username,
@@ -627,6 +646,7 @@ class App extends Eventable {
         document.getElementById("otv_rotate").style.display = "none";
         document.getElementById("otv_delete").style.display = "none";
         this.mapMgr.activated = false;    
+        this.onClosePhotoMgr();
         if(this.events.logout) {
             this.events.logout();
         }
@@ -639,6 +659,76 @@ class App extends Eventable {
             this.onLoginStateChange();
         });
     }
+
+    setupPhotoMgr() {
+        if(!this.photoMgrDlg) {
+            this.photoMgrDlg = new Dialog('panoContainer',
+            {
+                'Close': ()=> { 
+                    this.onClosePhotoMgr();
+                 }
+            },
+            { backgroundColor: "rgba(128,192,128,0.9)",
+                color: "black",
+                top: '0px',
+                left: '0px',
+                width: '50%',
+                height: '100%',
+                textAlign: "center",
+                overflow: "auto" 
+            });
+            this.photoMgrDlg.div.id = '_dlgPhotoMgr';
+            const content = document.createElement("div");
+            const h2 = document.createElement("h2");
+            h2.appendChild(document.createTextNode("Manage your panoramas"));
+            content.appendChild(h2);
+            const p = document.createElement("p");
+            p.appendChild(document.createTextNode("Select a panorama and then position it by clicking on the map. When you are finished, click 'Upload positioned panos' to upload them."));
+            content.appendChild(p);
+            const photoMgr = document.createElement("div");
+            photoMgr.id="_photoMgr";
+            content.appendChild(photoMgr);
+
+            this.photoMgrDlg.setDOMContent(content);
+            this.onOpenPhotoMgr();
+
+            this.photoMgr = new PhotoManager(2,4,'_photoMgr', { 
+                actionsContainer: this.photoMgrDlg.actionsContainer, 
+                onPositioned: (id,lat,lon)=> { 
+                    this.mapMgr.addNewPano(id, lat, lon) 
+                }, 
+                onPositionUploaded: this.mapMgr.removeNewPanos.bind(this.mapMgr), 
+                adminProvider: this, 
+                onSelected: id=>{
+                    this.mapMgr.selectNewPano(id) 
+            }});
+        } else {
+            this.onOpenPhotoMgr();
+        }
+        
+        this.mapMgr.map.on("click", e=> {
+            this.photoMgr.setCoords(e.latlng);
+        });
+    }
+
+    onOpenPhotoMgr() {
+        this.setupMode(1);
+        this.origMapStyle = { 
+            width: this.mapEl.style.width,
+            left: this.mapEl.style.left
+        };
+        this.mapEl.style.left = '50%';
+        this.mapEl.style.width = '50%';
+        this.photoMgrDlg.show();
+    }
+
+    onClosePhotoMgr () {
+        this.photoMgrDlg?.hide();
+        if(this.origMapStyle) {
+             this.mapEl.style.left  = this.origMapStyle.left;
+             this.mapEl.style.width  = this.origMapStyle.width;
+        }
+    }
 }
 
-export default App; 
+export default PanoApp; 

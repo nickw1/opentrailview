@@ -2,10 +2,8 @@ import qs from 'querystring';
 import OsmLoader from './osmloader.js';
 import PanoNetworkMgr from './routing/PanoNetworkMgr.js';
 import * as OpenWanderer from 'openwanderer-jsapi';
-import App from './app/app.js';
-//import * as OWApp from 'openwanderer-app';
+import PanoApp from './app/panoapp.js';
 import launchUploadDialog from './uploadlaunch.js';
-import PhotoManager from './photomgr.js';
 
 import { GoogleProjection, Dialog } from 'jsfreemaplib';
 
@@ -21,7 +19,7 @@ const nav = new OpenWanderer.Navigator({
     svgOver: { red: 255, green: 255, blue: 192 }
 
 });
-const app = new App({
+const panoApp = new PanoApp({
     controlIcons: {
         'select': 'images/cursor-default-click.png',
         'rotate': 'images/outline_refresh_black_24dp.png',    
@@ -42,12 +40,11 @@ const app = new App({
     cameraIcon: 'images/camera.png',
     loginContainer: 'loginContainer',
     controlContainer: 'controlsContainer',
-    searchContainer: 'searchContainer',
+    searchContainer: null,
     rotateControlsContainer: 'rotationControlsContainer',
     dialogParent: 'main', 
-     navigator: nav,
+    navigator: nav,
     setupUpload: false,
-//    uploadContainer: 'uploadContainer',
     dialogStyle: {
         backgroundColor: '#90c590',
         color: 'black',
@@ -65,10 +62,11 @@ if(parts.length == 2) {
     get = qs.parse(parts[1]);
 }
 if(get.lat && get.lon) {
-    app.navigator.findPanoramaByLonLat(get.lon, get.lat);
+    panoApp.navigator.findPanoramaByLonLat(get.lon, get.lat);
 } else {
-    app.navigator.loadPanorama(get.id || 1);
+    panoApp.navigator.loadPanorama(get.id || 1);
 }
+
 
 const osmLoader = new OsmLoader(nav.viewer, "map/{z}/{x}/{y}.json", "terrarium/{z}/{x}/{y}.png"); 
 
@@ -142,7 +140,7 @@ nav.on("locationChanged", async (lon, lat) => {
       */
 });
 
-app.on('login', () => {
+panoApp.on('login', () => {
     if(!document.getElementById('uploadControl')) {
         const img = document.createElement('img');
         img.id = 'uploadControl';
@@ -152,19 +150,12 @@ app.on('login', () => {
         });
         const controlsContainer = document.getElementById('controlsContainer');
         controlsContainer.insertBefore(img, controlsContainer.firstChild);
-        const a = document.createElement("a");
-
-        a.id="setupPhotoMgr";
-        a.addEventListener("click", setupPhotoMgr);
-        a.appendChild(document.createTextNode(" "));
-        a.appendChild(document.createTextNode("Manage photos"));
-        document.getElementById('loginContainer').appendChild(a);
     } else {
         document.getElementById('uploadControl').style.display = 'inline';
     }
 });
 
-app.on('logout', () => {
+panoApp.on('logout', () => {
     if(document.getElementById('uploadControl')) {
         document.getElementById('uploadControl').style.display = 'none';
     }
@@ -177,7 +168,6 @@ app.on('logout', () => {
         window.location = '/osm/login';
     });
     document.getElementById('loginContainer').appendChild(osmLogin);
-    app.photoMgrDlg?.hide();
 });
 
 
@@ -210,55 +200,6 @@ function drawPanoRoute(panoRoute, divergence) {
     }
 }
 
-function setupPhotoMgr() {
-    if(!app.photoMgrDlg) {
-        app.photoMgrDlg = new Dialog('panoContainer',
-            {
-                'Close': ()=> { 
-                app.photoMgrDlg.hide();
-            }},
-            { backgroundColor: "rgba(128,192,128,0.9)",
-                color: "black",
-                top: '160px',
-                left: '200px',
-                width:'calc(100% - 400px)',
-                height: 'calc(100% - 240px)',
-                textAlign: "center",
-				overflow: "auto" 
-            });
-        app.photoMgrDlg.div.id = '_dlgPhotoMgr';
-        const content = document.createElement("div");
-        const h2 = document.createElement("h2");
-        h2.appendChild(document.createTextNode("Manage your panoramas"));
-        content.appendChild(h2);
-        const p = document.createElement("p");
-        p.appendChild(document.createTextNode("Select a panorama and then position it by clicking on the map. When you are finished, click 'Upload positioned panos' to upload them."));
-        content.appendChild(p);
-        const photoMgr = document.createElement("div");
-        photoMgr.id="_photoMgr";
-        content.appendChild(photoMgr);
-
-        app.photoMgrDlg.setDOMContent(content);
-        app.photoMgrDlg.show();
-
-        app.photoMgr = new PhotoManager(2,4,'_photoMgr', { 
-            actionsContainer: app.photoMgrDlg.actionsContainer, 
-            onPositioned: (id,lat,lon)=> { 
-                app.mapMgr.addNewPano(id, lat, lon) 
-            }, 
-            onPositionUploaded: app.mapMgr.removeNewPanos.bind(this.mapMgr), 
-            adminProvider: app,
-            onSelected: id=>{
-                app.mapMgr.selectNewPano(id) 
-        }});
-    } else {
-        app.photoMgrDlg.show();
-    }
-        
-    app.mapMgr.map.on("click", e=> {
-        app.photoMgr.setCoords(e.latlng);
-    });
-}
 
 function drawArrow(lon, lat, bearing, origin, lengthMetres, targetPanoId) {
     const bearingRadians = bearing * (Math.PI / 180.0);
@@ -285,11 +226,11 @@ function drawArrow(lon, lat, bearing, origin, lengthMetres, targetPanoId) {
 
 /*
 function connectPano(lon1, lat1, lon2, lat2) {
-    if(app.map.connectLine) {
-        app.map.removeLayer(app.map.connectLine);
+    if(panoApp.map.connectLine) {
+        panoApp.map.removeLayer(panoApp.map.connectLine);
     }
     const pos = [lat1, lon1];
-    app.map.connectLine = L.polyline([pos, [lat2,lon2]]).addTo(map); 
-    app.map.setCenter(pos);
+    panoApp.map.connectLine = L.polyline([pos, [lat2,lon2]]).addTo(map); 
+    panoApp.map.setCenter(pos);
 }
 */

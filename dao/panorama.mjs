@@ -87,7 +87,7 @@ export default class PanoDao {
     }
 
     async findByUser(userid) {
-        const dbres = await this.db.query('SELECT id, ele, poseheadingdegrees, pancorrection, tiltcorrection, rollcorrection, authorised, ST_AsText(the_geom) AS the_geom FROM panoramas WHERE userid=$1 AND authorised=1 the_geom IS NOT NULL ORDER BY id', [userid]);
+        const dbres = await this.db.query('SELECT id, ele, poseheadingdegrees, pancorrection, tiltcorrection, rollcorrection, authorised, ST_AsText(the_geom) AS the_geom FROM panoramas WHERE userid=$1 AND authorised=1 AND the_geom IS NOT NULL ORDER BY id', [userid]);
         dbres.rows.forEach(row => { this.extractLonLat(row); });
         return dbres.rows;
     }

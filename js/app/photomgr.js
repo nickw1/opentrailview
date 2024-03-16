@@ -1,11 +1,11 @@
 const Dialog = require('jsfreemaplib').Dialog;
-const Uploader = require('./uploader');
 
 class PhotoManager {
 
     constructor(nrows, ncols, photodiv, options) {
         this.selectedPhoto = 0;
         this.positionedPhotos = {};
+        this.userPhotos = [];
         this.nrows = nrows;
         this.ncols = ncols;
         this.currentPage = 0;
