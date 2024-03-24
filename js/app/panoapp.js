@@ -678,6 +678,7 @@ class PanoApp extends Eventable {
                 overflow: "auto" 
             });
             this.photoMgrDlg.div.id = '_dlgPhotoMgr';
+            this.photoMgrDlg.div.style.overflow = 'auto';
             const content = document.createElement("div");
             const h2 = document.createElement("h2");
             h2.appendChild(document.createTextNode("Manage your panoramas"));
